@@ -55,3 +55,26 @@ The Nuxt app and API routes run together. Transaction data is persisted through 
 npm run type-check
 npm run build
 ```
+
+## Deploying to Render
+
+Deploy this project as a Render Web Service, not a Static Site, because the Nuxt
+server also hosts the `/api/transactions` routes.
+
+Use these settings if configuring the service manually:
+
+```sh
+Build Command: npm ci && npm run build
+Start Command: npm run start
+```
+
+Set these environment variables in Render:
+
+```sh
+HOST=0.0.0.0
+MONGODB_URI=<your MongoDB Atlas connection string>
+MONGODB_DATABASE=finance_tracker
+```
+
+The included `render.yaml` contains the same build and start commands for Render
+Blueprint deployments.
