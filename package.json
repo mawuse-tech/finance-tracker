@@ -7,6 +7,7 @@
     "dev": "nuxt dev",
     "build": "nuxt build",
     "start": "node .output/server/index.mjs",
+    "postinstall": "node scripts/render-postinstall.mjs",
     "preview": "nuxt preview",
     "type-check": "nuxt typecheck"
   },
