@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ChartBarIcon } from '@heroicons/vue/24/outline'
 import { computed } from 'vue'
 import type { DashboardCardTone } from '../../utils/dashboard'
 
@@ -45,9 +46,7 @@ const classes = computed(() => toneClasses[props.tone])
       </div>
 
       <div :class="['rounded-lg p-2', classes.icon]">
-        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M4 19V5m5 14V9m5 10V3m5 16v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-        </svg>
+        <ChartBarIcon class="h-5 w-5" aria-hidden="true" />
       </div>
     </div>
 

@@ -1,9 +1,22 @@
 <script setup lang="ts">
+import { onMounted, onUnmounted, ref, type Component } from 'vue'
+import {
+  ChartBarIcon,
+  ChartPieIcon,
+  Cog6ToothIcon,
+  ListBulletIcon,
+  Squares2X2Icon,
+  WalletIcon,
+  XMarkIcon,
+} from '@heroicons/vue/24/outline'
+
+type NavSection = 'dashboard' | 'transactions' | 'budgets' | 'savings' | 'reports'
+
 type NavItem = {
+  id: NavSection
   label: string
   href: string
-  active: boolean
-  iconPath: string
+  icon: Component
 }
 
 defineProps<{
@@ -16,50 +29,102 @@ const emit = defineEmits<{
 
 const navItems: NavItem[] = [
   {
+    id: 'dashboard',
     label: 'Dashboard',
-    href: '#',
-    active: true,
-    iconPath:
-      'M3 13h8V3H3v10Zm0 8h8v-6H3v6Zm10 0h8V11h-8v10Zm0-18v6h8V3h-8Z',
+    href: '#dashboard',
+    icon: Squares2X2Icon,
   },
   {
+    id: 'transactions',
     label: 'Transactions',
-    href: '#',
-    active: false,
-    iconPath:
-      'M7 7h10M7 12h10M7 17h6M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z',
+    href: '#transactions',
+    icon: ListBulletIcon,
   },
   {
+    id: 'budgets',
     label: 'Budgets',
-    href: '#',
-    active: false,
-    iconPath:
-      'M12 3a9 9 0 1 0 9 9h-9V3Zm2 0v7h7a9 9 0 0 0-7-7Z',
+    href: '#budgets',
+    icon: ChartPieIcon,
   },
   {
+    id: 'savings',
     label: 'Savings',
-    href: '#',
-    active: false,
-    iconPath:
-      'M5 11h14M7 11V8a5 5 0 0 1 10 0v3M6 11v8h12v-8M10 15h4',
+    href: '#savings',
+    icon: WalletIcon,
   },
   {
+    id: 'reports',
     label: 'Reports',
-    href: '#',
-    active: false,
-    iconPath: 'M4 19V5m5 14V9m5 10V3m5 16v-7',
+    href: '#reports',
+    icon: ChartBarIcon,
   },
 ]
 
 const secondaryItems: NavItem[] = [
   {
+    id: 'dashboard',
     label: 'Settings',
     href: '#',
-    active: false,
-    iconPath:
-      'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm8 4a8 8 0 0 0-.2-1.8l2-1.5-2-3.4-2.4 1a8 8 0 0 0-3.1-1.8L14 2h-4l-.3 2.5a8 8 0 0 0-3.1 1.8l-2.4-1-2 3.4 2 1.5A8 8 0 0 0 4 12c0 .6.1 1.2.2 1.8l-2 1.5 2 3.4 2.4-1a8 8 0 0 0 3.1 1.8L10 22h4l.3-2.5a8 8 0 0 0 3.1-1.8l2.4 1 2-3.4-2-1.5c.1-.6.2-1.2.2-1.8Z',
+    icon: Cog6ToothIcon,
   },
 ]
+
+const activeSection = ref<NavSection>('dashboard')
+let sectionObserver: IntersectionObserver | undefined
+
+const getHashSection = (): NavSection => {
+  if (typeof window === 'undefined') {
+    return 'dashboard'
+  }
+
+  const hash = window.location.hash.replace('#', '')
+  const matchingItem = navItems.find((item) => item.id === hash)
+
+  return matchingItem?.id ?? 'dashboard'
+}
+
+const setActiveFromHash = () => {
+  activeSection.value = getHashSection()
+}
+
+const handleNavClick = (section: NavSection) => {
+  activeSection.value = section
+  emit('close')
+}
+
+onMounted(() => {
+  setActiveFromHash()
+  window.addEventListener('hashchange', setActiveFromHash)
+
+  sectionObserver = new IntersectionObserver(
+    (entries) => {
+      const visibleSection = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((current, next) => next.intersectionRatio - current.intersectionRatio)[0]
+
+      if (visibleSection) {
+        activeSection.value = visibleSection.target.id as NavSection
+      }
+    },
+    {
+      rootMargin: '-30% 0px -55% 0px',
+      threshold: [0.1, 0.25, 0.5],
+    },
+  )
+
+  navItems.forEach((item) => {
+    const section = document.getElementById(item.id)
+
+    if (section) {
+      sectionObserver?.observe(section)
+    }
+  })
+})
+
+onUnmounted(() => {
+  window.removeEventListener('hashchange', setActiveFromHash)
+  sectionObserver?.disconnect()
+})
 </script>
 
 <template>
@@ -87,9 +152,7 @@ const secondaryItems: NavItem[] = [
         aria-label="Close sidebar"
         @click="emit('close')"
       >
-        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-        </svg>
+        <XMarkIcon class="h-5 w-5" aria-hidden="true" />
       </button>
     </div>
 
@@ -103,21 +166,13 @@ const secondaryItems: NavItem[] = [
             :href="item.href"
             :class="[
               'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition',
-              item.active
+              activeSection === item.id
                 ? 'bg-emerald-50 text-emerald-700'
                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950',
             ]"
-            @click="emit('close')"
+            @click="handleNavClick(item.id)"
           >
-            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path
-                :d="item.iconPath"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
+            <component :is="item.icon" class="h-5 w-5" aria-hidden="true" />
             {{ item.label }}
           </a>
         </div>
@@ -140,15 +195,7 @@ const secondaryItems: NavItem[] = [
             class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-950"
             @click="emit('close')"
           >
-            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path
-                :d="item.iconPath"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
+            <component :is="item.icon" class="h-5 w-5" aria-hidden="true" />
             {{ item.label }}
           </a>
         </div>
